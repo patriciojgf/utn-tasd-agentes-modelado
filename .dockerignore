@@ -1,0 +1,5 @@
+# La imagen solo necesita las dependencias y los scripts de docker/.
+# El proyecto (y sobre todo la referencia) se monta aparte y nunca entra en la imagen.
+*
+!requirements.txt
+!docker/

@@ -1,0 +1,71 @@
+version: 2
+models:
+  - name: dim_cliente
+    description: Dimensión de clientes, una fila por cliente con su segmento vigente y su sucursal.
+    columns:
+      - name: cliente_id
+        description: Identificador único del cliente.
+        data_tests: [unique, not_null]
+      - name: segmento
+        description: "Segmento vigente: MAS, PRE o BLK."
+        data_tests:
+          - accepted_values:
+              values: ['MAS', 'PRE', 'BLK']
+      - name: sucursal_id
+        description: Sucursal de radicación.
+        data_tests:
+          - relationships:
+              to: ref('sucursales')
+              field: sucursal_id
+
+  - name: dim_producto
+    description: Dimensión de productos con la jerarquía aplanada (subproducto → producto → familia).
+    columns:
+      - name: producto_id
+        description: Subproducto (nivel 3). Es la clave que usan las cuentas.
+        data_tests: [unique, not_null]
+      - name: producto
+        description: Descripción del producto (nivel 2).
+        data_tests: [not_null]
+      - name: familia
+        description: Descripción de la familia (nivel 1).
+        data_tests: [not_null]
+
+  - name: fact_movimientos
+    description: >
+      Hechos de movimientos, un registro por movimiento de cuentas no anuladas,
+      con importe con signo y en pesos.
+    columns:
+      - name: movimiento_id
+        description: Identificador del movimiento.
+        data_tests: [unique, not_null]
+      - name: cuenta_id
+        description: Cuenta del movimiento (nunca anulada).
+        data_tests:
+          - relationships:
+              to: ref('cuentas')
+              field: cuenta_id
+      - name: tipo_cambio
+        description: Cotización aplicada (1 para ARS).
+        data_tests: [not_null]
+      - name: importe_pesos
+        description: Importe con signo expresado en pesos.
+        data_tests: [not_null]
+
+  - name: dim_cuenta
+    description: Dimensión de cuentas, una fila por cuenta no anulada. Relaciona clientes con productos.
+    columns:
+      - name: cuenta_id
+        description: Identificador de la cuenta.
+        data_tests: [unique, not_null]
+      - name: cliente_id
+        description: Titular de la cuenta.
+        data_tests:
+          - relationships:
+              to: ref('clientes')
+              field: cliente_id
+      - name: estado
+        description: "Estado de la cuenta: A, B o C (las X están excluidas)."
+        data_tests:
+          - accepted_values:
+              values: ['A', 'B', 'C']

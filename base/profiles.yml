@@ -1,0 +1,7 @@
+tasd:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: banco.duckdb
+      threads: 1

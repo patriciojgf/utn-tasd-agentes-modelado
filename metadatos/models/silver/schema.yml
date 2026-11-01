@@ -1,0 +1,100 @@
+# Condición CON metadatos: mismas tablas, con descripciones de negocio.
+version: 2
+models:
+  - name: clientes
+    description: >
+      Histórico de clientes. Un cliente tiene UNA fila por cada período de vigencia
+      de su segmento comercial. La fila vigente es la que tiene fecha_hasta = 9999-12-31.
+      Para obtener la foto actual de un cliente hay que filtrar por esa condición;
+      si no, cualquier join contra cuentas duplica filas.
+    columns:
+      - name: cliente_id
+        description: Identificador del cliente. NO es único en esta tabla (ver descripción de la tabla).
+      - name: nombre
+        description: Apellido y nombre.
+      - name: documento
+        description: Número de documento.
+      - name: segmento
+        description: "Segmento comercial vigente en el período: MAS = masivo, PRE = premium, BLK = black."
+      - name: fecha_desde
+        description: Inicio del período de vigencia de este segmento.
+      - name: fecha_hasta
+        description: Fin del período. 9999-12-31 indica el registro vigente.
+      - name: sucursal_id
+        description: Sucursal de radicación del cliente. FK a sucursales.sucursal_id.
+
+  - name: cuentas
+    description: >
+      Cuentas y productos contratados. Una fila por cuenta. Las cuentas con estado 'X'
+      están ANULADAS y deben excluirse de cualquier análisis (saldos, movimientos, conteos).
+    columns:
+      - name: cuenta_id
+        description: Identificador único de la cuenta.
+      - name: cliente_id
+        description: Titular. FK a clientes.cliente_id (usar la fila vigente del cliente).
+      - name: producto_id
+        description: Subproducto contratado (nivel 3 de la jerarquía). FK a productos.producto_id.
+      - name: moneda
+        description: "Moneda de la cuenta: ARS (pesos) o USD (dólares)."
+      - name: estado
+        description: "A = activa, B = bloqueada, C = cerrada, X = anulada (excluir siempre)."
+      - name: fecha_alta
+        description: Fecha de apertura.
+
+  - name: movimientos
+    description: >
+      Movimientos transaccionales. El importe está SIEMPRE en positivo y en la moneda
+      de la cuenta. El signo lo determina el tipo: D (débito) resta, C (crédito) suma,
+      R (reverso) es la anulación de un débito anterior y por lo tanto SUMA.
+      Para expresar en pesos, los movimientos en USD se multiplican por el tipo de cambio
+      del MISMO DÍA de la tabla tipos_cambio; los movimientos en ARS no se convierten.
+    columns:
+      - name: movimiento_id
+        description: Identificador único del movimiento.
+      - name: cuenta_id
+        description: FK a cuentas.cuenta_id.
+      - name: fecha
+        description: Fecha contable del movimiento.
+      - name: tipo
+        description: "D = débito (resta), C = crédito (suma), R = reverso de débito (suma)."
+      - name: importe_original
+        description: Importe en la moneda de la cuenta, siempre positivo.
+      - name: moneda
+        description: Moneda del importe (coincide con la moneda de la cuenta).
+
+  - name: productos
+    description: >
+      Jerarquía de productos en una sola tabla autorreferencial de 3 niveles:
+      nivel 1 = familia, nivel 2 = producto, nivel 3 = subproducto.
+      Las cuentas se asocian siempre al nivel 3. producto_padre_id apunta al nivel superior.
+    columns:
+      - name: producto_id
+        description: Identificador del nodo de la jerarquía.
+      - name: descripcion
+        description: Nombre del nodo.
+      - name: producto_padre_id
+        description: producto_id del nivel superior. NULL en las familias (nivel 1).
+      - name: nivel
+        description: 1 = familia, 2 = producto, 3 = subproducto.
+
+  - name: sucursales
+    description: Sucursales del banco. Una fila por sucursal.
+    columns:
+      - name: sucursal_id
+        description: Identificador único.
+      - name: descripcion
+        description: Nombre de la sucursal.
+      - name: provincia
+        description: Provincia donde está ubicada.
+
+  - name: tipos_cambio
+    description: >
+      Cotización diaria de monedas extranjeras contra el peso. Una fila por fecha y moneda.
+      Solo hay cotización para USD; el peso (ARS) no aparece porque vale 1.
+    columns:
+      - name: fecha
+        description: Fecha de la cotización.
+      - name: moneda
+        description: Moneda cotizada (USD).
+      - name: valor
+        description: Pesos por unidad de la moneda.

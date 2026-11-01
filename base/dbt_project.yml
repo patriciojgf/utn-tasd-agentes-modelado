@@ -1,0 +1,40 @@
+name: 'tasd'
+version: '1.0.0'
+profile: 'tasd'
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+analysis-paths: ["analyses"]
+
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+seeds:
+  tasd:
+    +schema: bronze
+    T_CLI:
+      +column_types:
+        CLI_FEC_DESDE: INTEGER
+        CLI_FEC_HASTA: INTEGER
+    T_MOV:
+      +column_types:
+        MOV_FEC: INTEGER
+        MOV_IMP_ORI: "DECIMAL(18,2)"
+    T_TIPCAMB:
+      +column_types:
+        TC_FEC: INTEGER
+        TC_VAL: "DECIMAL(18,4)"
+    T_CTA:
+      +column_types:
+        CTA_FEC_ALTA: INTEGER
+
+models:
+  tasd:
+    silver:
+      +schema: silver
+      +materialized: table
+    gold:
+      +schema: gold
+      +materialized: table

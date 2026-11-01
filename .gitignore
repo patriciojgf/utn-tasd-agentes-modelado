@@ -1,0 +1,11 @@
+.env
+corridas/
+demo/
+resultados/
+referencia/proyecto/
+**/target/
+**/logs/
+*.duckdb
+*.duckdb.wal
+__pycache__/
+.humo/

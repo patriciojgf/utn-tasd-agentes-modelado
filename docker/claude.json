@@ -1,0 +1,10 @@
+{
+  "hasCompletedOnboarding": true,
+  "theme": "dark",
+  "projects": {
+    "/trabajo": {
+      "hasTrustDialogAccepted": true,
+      "allowedTools": []
+    }
+  }
+}

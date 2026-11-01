@@ -1,0 +1,44 @@
+# Condición SIN metadatos: solo se declaran las tablas y columnas, sin descripciones.
+version: 2
+models:
+  - name: clientes
+    columns:
+      - {name: cliente_id}
+      - {name: nombre}
+      - {name: documento}
+      - {name: segmento}
+      - {name: fecha_desde}
+      - {name: fecha_hasta}
+      - {name: sucursal_id}
+  - name: cuentas
+    columns:
+      - {name: cuenta_id}
+      - {name: cliente_id}
+      - {name: producto_id}
+      - {name: moneda}
+      - {name: estado}
+      - {name: fecha_alta}
+  - name: movimientos
+    columns:
+      - {name: movimiento_id}
+      - {name: cuenta_id}
+      - {name: fecha}
+      - {name: tipo}
+      - {name: importe_original}
+      - {name: moneda}
+  - name: productos
+    columns:
+      - {name: producto_id}
+      - {name: descripcion}
+      - {name: producto_padre_id}
+      - {name: nivel}
+  - name: sucursales
+    columns:
+      - {name: sucursal_id}
+      - {name: descripcion}
+      - {name: provincia}
+  - name: tipos_cambio
+    columns:
+      - {name: fecha}
+      - {name: moneda}
+      - {name: valor}
