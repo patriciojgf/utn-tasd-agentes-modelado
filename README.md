@@ -42,17 +42,48 @@ Requisitos: Docker, y una cuenta de Claude (Pro o Max) o una clave de API de Ant
 
 ## Usar Gemini en lugar de Claude
 
-El experimento se hizo con Claude Code, pero se puede repetir con Gemini CLI, por ejemplo con una cuenta de Google (gratuita o Google AI Pro) o con una clave de API de Google AI Studio. La imagen de Docker trae las dos herramientas.
+El experimento se hizo con Claude Code, pero se puede repetir con Gemini CLI usando una clave de API de Google AI Studio. La imagen de Docker trae las dos herramientas, así que no hay que instalar nada aparte.
 
-1. En `.env`, poner `AGENTE=gemini` y el modelo en `MODELO` (por ejemplo `gemini-2.5-pro`).
-2. Autenticarse de una de estas formas:
-   - Con cuenta de Google, una sola vez: `./tasd.sh gemini-login`. Se abre Gemini dentro del contenedor, se elige «Login with Google», se abre el link en el navegador y se pega el código. Las credenciales quedan en `.gemini-auth/`, que no se sube al repositorio.
-   - Con clave de API: completar `GEMINI_API_KEY` en `.env`.
-3. Seguir los mismos pasos de arriba (`./tasd.sh abrir ...`).
+### Configuración
+
+1. Sacar una clave en [Google AI Studio](https://aistudio.google.com/apikey) con una cuenta de Google. Alcanza con el nivel gratuito para probar.
+2. En `.env`, dejar estas tres variables (y borrar o comentar las de Claude):
+   ```
+   AGENTE=gemini
+   MODELO=gemini-3-flash-preview
+   GEMINI_API_KEY=tu_clave
+   ```
+3. Construir la imagen y la referencia, si no se hizo antes: `./tasd.sh construir` y `./tasd.sh referencia`.
+4. Abrir una corrida como siempre, por ejemplo `./tasd.sh abrir sin T1 1`, y pegarle el pedido de `tareas/pedidos/`.
+5. Al terminar, salir con `/quit` (en Claude es `/exit`). La corrida se evalúa sola.
+
+### Qué modelo usar
+
+El nombre tiene que ser uno que acepte Gemini CLI. Dentro de una sesión, `/model` muestra la lista. Probados en noviembre de 2026:
+
+| Modelo | Para qué |
+|---|---|
+| `gemini-3-flash-preview` | Probar que todo el circuito anda; entra cómodo en el nivel gratuito |
+| `gemini-3.1-pro-preview` | Repetir la comparación: es el más parecido a Claude Sonnet, pero tiene menos cuota gratuita |
+
+Modelos más viejos como `gemini-2.5-flash` pueden figurar en la API pero la CLI los rechaza con «Model ... was not found or is invalid».
+
+### Cómo saber que quedó bien configurado
+
+Al abrir la corrida, Gemini tiene que mostrar:
+
+- `Authenticated with gemini-api-key`: está usando la clave del `.env`.
+- `1 CLAUDE.md file`, abajo a la derecha: cargó las instrucciones del agente.
+- `workspace /trabajo`: solo ve la carpeta de la corrida.
+- `auto-accept edits`: aprueba solas las ediciones de archivos y pide permiso para los comandos, igual que Claude en el experimento.
+
+### Qué recibe y qué puede hacer
 
 Gemini recibe lo mismo que Claude: lee `CLAUDE.md` y `TAREA.md`, y solo puede leer y escribir archivos de la carpeta de la corrida, correr `dbt`, consultar la base con `python -c` y listar archivos, sin acceso a internet. Esa configuración está en `docker/gemini-settings.json` y se instala como configuración de sistema, así que el agente no la puede cambiar. Cada corrida usa su propia carpeta de sesión, para que una corrida no vea el historial de otra.
 
-Tené en cuenta que los resultados no son comparables uno a uno con los del informe, porque cambia el modelo. Sí se puede repetir la comparación sin y con metadatos con Gemini.
+El login con cuenta de Google («Sign in with Google») no sirve: Google lo dio de baja en Gemini CLI para cuentas personales, incluidas las de Google AI Pro, en junio de 2026. Por eso se usa la clave de API.
+
+Los resultados no son comparables uno a uno con los del informe, porque cambia el modelo. Sí se puede repetir la comparación sin y con metadatos con Gemini.
 
 ## Documentación completa
 

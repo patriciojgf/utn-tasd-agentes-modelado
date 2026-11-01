@@ -9,4 +9,3 @@ referencia/proyecto/
 *.duckdb.wal
 __pycache__/
 .humo/
-.gemini-auth/

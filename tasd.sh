@@ -7,7 +7,6 @@ RAIZ="$(cd "$(dirname "$0")" && pwd)"
 IMAGEN="tasd-tp:1"
 CORRIDAS="$RAIZ/corridas"
 DEMO="$RAIZ/demo"
-GEMINI_AUTH="$RAIZ/.gemini-auth"   # login con cuenta de Google para Gemini CLI (no se sube)
 TTY=(); [[ -t 0 && -t 1 ]] && TTY=(-it)
 
 # Orden de las corridas: alterna escenarios y tareas (paso 10 de la guía).
@@ -26,7 +25,7 @@ Preparación (una sola vez)
 
 Experimento
   correr <sin|con> <T1..T3> <rep>   Una corrida: prepara, corre el agente sin intervención y evalúa
-  abrir <sin|con> <T1..T3> <rep>    Una corrida interactiva: le escribís vos la tarea a Claude; al salir (/exit) se evalúa
+  abrir <sin|con> <T1..T3> <rep>    Una corrida interactiva: le escribís vos la tarea al agente; al salir se evalúa
   todas [reps...]                   Las 12 corridas (por defecto reps 1 y 2), salteando las hechas
   estado                            Qué corridas están hechas, incompletas o pendientes
   preparar <sin|con> <T> <rep>      Solo arma la carpeta de la corrida (sin agente)
@@ -41,7 +40,6 @@ Demo en clase
   demo-comparar                 Evalúa las dos sesiones de la demo y las muestra lado a lado
 
 Otros
-  gemini-login                  Login con cuenta de Google para usar Gemini CLI (AGENTE=gemini en .env)
   shell                         Terminal dentro del contenedor, con el proyecto montado
 EOF
 }
@@ -84,8 +82,8 @@ verificar_env() {
         [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}${ANTHROPIC_API_KEY:-}" ]] || \
           { echo "Error: falta CLAUDE_CODE_OAUTH_TOKEN o ANTHROPIC_API_KEY en .env" >&2; exit 1; } ;;
       gemini)
-        [[ -n "${GEMINI_API_KEY:-}" || -f "$GEMINI_AUTH/oauth_creds.json" ]] || \
-          { echo "Error: falta GEMINI_API_KEY en .env, o hacer el login con ./tasd.sh gemini-login" >&2; exit 1; } ;;
+        [[ -n "${GEMINI_API_KEY:-}" ]] || \
+          { echo "Error: falta GEMINI_API_KEY en .env (se saca en https://aistudio.google.com/apikey)" >&2; exit 1; } ;;
       *) echo "Error: AGENTE en .env tiene que ser claude o gemini" >&2; exit 1 ;;
     esac )
 }
@@ -119,13 +117,9 @@ en_agente() {
   set -a; source "$RAIZ/.env"; set +a
   if [[ "${AGENTE:-claude}" == "gemini" ]]; then
     # Cada corrida tiene su propia carpeta de Gemini (sesión e historial), así una corrida
-    # no ve lo que pasó en otra. Si se hizo el login con cuenta de Google, se copian las
-    # credenciales; si no, se usa GEMINI_API_KEY.
+    # no ve lo que pasó en otra. La autenticación es con GEMINI_API_KEY.
     local casa="${registro:-$(mktemp -d)}/sesion_gemini"
     mkdir -p "$casa"
-    for f in oauth_creds.json google_accounts.json settings.json; do
-      [[ -f "$GEMINI_AUTH/$f" ]] && cp "$GEMINI_AUTH/$f" "$casa/"
-    done
     montajes+=(-v "$casa:/home/agente/.gemini")
   elif [[ "$modo" == "interactivo" && -n "$registro" ]]; then
     # En modo interactivo se guarda la sesión de Claude Code para tener el transcript.
@@ -238,7 +232,7 @@ cmd_abrir() {
   mkdir -p "$registro"
   echo
   echo "==> Se abre el agente. Escribile la tarea (la consigna está en TAREA.md)."
-  echo "    Cuando termine, salí con /exit y la corrida se evalúa sola."
+  echo "    Cuando termine, salí (/exit en Claude, /quit en Gemini) y la corrida se evalúa sola."
   echo
   local inicio; inicio=$(date +%s)
   en_agente "$corrida" "$registro" interactivo || true
@@ -331,19 +325,6 @@ cmd_demo_comparar() {
   en_proyecto python scripts/comparar.py demo/sin_metadatos/T1_rep1 demo/con_metadatos/T1_rep1
 }
 
-cmd_gemini_login() {
-  # Login con cuenta de Google (incluye Google AI Pro y el nivel gratuito). Se hace una sola
-  # vez; las credenciales quedan en .gemini-auth/ y se copian a cada corrida.
-  verificar_imagen
-  mkdir -p "$GEMINI_AUTH"
-  echo "Se abre Gemini CLI. Elegí «Login with Google», abrí en el navegador el link que"
-  echo "muestra, autorizá y pegá el código. Cuando veas el prompt de Gemini, salí con /quit."
-  echo
-  docker run --rm -it -e NO_BROWSER=true -v "$GEMINI_AUTH:/home/agente/.gemini" -w /tmp "$IMAGEN" gemini
-  [[ -f "$GEMINI_AUTH/oauth_creds.json" ]] && echo "Login guardado en .gemini-auth/" \
-    || echo "No se guardó el login. Probá de nuevo o usá GEMINI_API_KEY en .env."
-}
-
 cmd_shell() {
   verificar_imagen
   en_proyecto bash
@@ -367,7 +348,6 @@ case "$comando" in
   consolidar) cmd_consolidar ;;
   demo) cmd_demo "$@" ;;
   demo-comparar) cmd_demo_comparar ;;
-  gemini-login) cmd_gemini_login ;;
   shell) cmd_shell ;;
   ayuda|-h|--help|help) ayuda ;;
   *) echo "Comando desconocido: $comando"; echo; ayuda; exit 1 ;;
