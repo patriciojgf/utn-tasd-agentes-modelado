@@ -1,0 +1,29 @@
+{
+  "general": {
+    "enableAutoUpdate": false,
+    "enableAutoUpdateNotification": false
+  },
+  "context": {
+    "fileName": ["CLAUDE.md"]
+  },
+  "tools": {
+    "core": [
+      "read_file",
+      "read_many_files",
+      "write_file",
+      "replace",
+      "glob",
+      "grep_search",
+      "list_directory",
+      "run_shell_command(dbt)",
+      "run_shell_command(python -c)",
+      "run_shell_command(ls)"
+    ]
+  },
+  "privacy": {
+    "usageStatisticsEnabled": false
+  },
+  "telemetry": {
+    "enabled": false
+  }
+}

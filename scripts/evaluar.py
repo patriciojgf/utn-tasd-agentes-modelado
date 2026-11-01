@@ -421,7 +421,7 @@ if os.path.isdir(REGISTRO):
         p = os.path.join(REGISTRO, nombre_archivo)
         return open(p, encoding="utf-8").read().strip() if os.path.exists(p) else None
     m["modelo"] = leer("modelo.txt")
-    m["version_claude"] = leer("version_claude.txt")
+    m["version_agente"] = leer("version_agente.txt") or leer("version_claude.txt")
     d = leer("duracion_segundos.txt")
     m["duracion_segundos"] = int(d) if d and d.isdigit() else None
     ruta_t = os.path.join(REGISTRO, "transcript.jsonl")
@@ -435,10 +435,20 @@ if os.path.isdir(REGISTRO):
             if ev.get("type") == "assistant":
                 herramientas += sum(1 for b in ev.get("message", {}).get("content", [])
                                     if isinstance(b, dict) and b.get("type") == "tool_use")
+            if ev.get("type") == "tool_use":  # formato de Gemini CLI
+                herramientas += 1
             if ev.get("type") == "result":
                 resultado = ev
     m["llamadas_a_herramientas"] = herramientas
-    if resultado:
+    if resultado and "stats" in resultado:
+        # Gemini CLI: {"type": "result", "status": ..., "stats": {...}}; no informa costo.
+        s = resultado.get("stats") or {}
+        m["agente_termino_ok"] = resultado.get("status") == "success"
+        m["turnos"] = None
+        m["costo_usd"] = None
+        m["tokens_entrada"] = s.get("input_tokens")
+        m["tokens_salida"] = s.get("output_tokens")
+    elif resultado:
         u = resultado.get("usage") or {}
         m["agente_termino_ok"] = not resultado.get("is_error", False)
         m["turnos"] = resultado.get("num_turns")

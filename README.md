@@ -6,7 +6,7 @@ Tecnologías Aplicadas a Soluciones de Datos (TASD), UTN FRBA, curso K4053, 2.º
 
 Este repositorio tiene todo lo necesario para repetir el experimento de nuestro trabajo práctico cuatrimestral. La pregunta es: ¿hasta dónde pueden los agentes de programación basados en IA hacerse cargo del ciclo de construcción de un modelo de datos (diseño, SQL, tests y documentación)?
 
-El caso de prueba es un banco ficticio con arquitectura medallion (bronze, silver, gold) en dbt Core sobre DuckDB. Un agente de programación (en nuestro caso Claude Code, corriendo en Docker) resuelve tres tareas: T1 construir el modelo gold, T2 escribir los tests y T3 documentar. Cada tarea se corre en dos condiciones, sin y con la documentación del negocio, y se mide si el agente aplica bien seis reglas de negocio que no se deducen de los datos.
+El caso de prueba es un banco ficticio con arquitectura medallion (bronze, silver, gold) en dbt Core sobre DuckDB. Un agente de programación (en nuestro caso Claude Code, corriendo en Docker; también se puede usar Gemini CLI) resuelve tres tareas: T1 construir el modelo gold, T2 escribir los tests y T3 documentar. Cada tarea se corre en dos condiciones, sin y con la documentación del negocio, y se mide si el agente aplica bien seis reglas de negocio que no se deducen de los datos.
 
 ## Qué hay en el repositorio
 
@@ -23,7 +23,7 @@ El caso de prueba es un banco ficticio con arquitectura medallion (bronze, silve
 
 ## Cómo replicarlo
 
-Requisitos: Docker, y una cuenta de Claude (Pro o Max) o una clave de API de Anthropic. Nosotros usamos Claude Code 2.1.274 con el modelo `claude-sonnet-5-5`.
+Requisitos: Docker, y una cuenta de Claude (Pro o Max) o una clave de API de Anthropic. Si no tenés Claude, ver más abajo «Usar Gemini en lugar de Claude». Nosotros usamos Claude Code 2.1.274 con el modelo `claude-sonnet-5-5`.
 
 1. Clonar el repositorio fuera de una carpeta sincronizada (Drive, iCloud), por ejemplo en `~/tasd-docker`.
 2. Copiar `.env.example` como `.env` y completar `MODELO` y el token. El `.env` nunca se sube.
@@ -39,6 +39,20 @@ Requisitos: Docker, y una cuenta de Claude (Pro o Max) o una clave de API de Ant
    ```
    No se interviene hasta que el agente termina. Si falla una regla, se le da la pista de esa regla y, si no alcanza, se le dicta la regla.
 5. Evaluar la corrida regla por regla siguiendo [docs/EVALUACION.md](docs/EVALUACION.md), que tiene lo que hay que verificar en cada regla y los valores esperados.
+
+## Usar Gemini en lugar de Claude
+
+El experimento se hizo con Claude Code, pero se puede repetir con Gemini CLI, por ejemplo con una cuenta de Google (gratuita o Google AI Pro) o con una clave de API de Google AI Studio. La imagen de Docker trae las dos herramientas.
+
+1. En `.env`, poner `AGENTE=gemini` y el modelo en `MODELO` (por ejemplo `gemini-2.5-pro`).
+2. Autenticarse de una de estas formas:
+   - Con cuenta de Google, una sola vez: `./tasd.sh gemini-login`. Se abre Gemini dentro del contenedor, se elige «Login with Google», se abre el link en el navegador y se pega el código. Las credenciales quedan en `.gemini-auth/`, que no se sube al repositorio.
+   - Con clave de API: completar `GEMINI_API_KEY` en `.env`.
+3. Seguir los mismos pasos de arriba (`./tasd.sh abrir ...`).
+
+Gemini recibe lo mismo que Claude: lee `CLAUDE.md` y `TAREA.md`, y solo puede leer y escribir archivos de la carpeta de la corrida, correr `dbt`, consultar la base con `python -c` y listar archivos, sin acceso a internet. Esa configuración está en `docker/gemini-settings.json` y se instala como configuración de sistema, así que el agente no la puede cambiar. Cada corrida usa su propia carpeta de sesión, para que una corrida no vea el historial de otra.
+
+Tené en cuenta que los resultados no son comparables uno a uno con los del informe, porque cambia el modelo. Sí se puede repetir la comparación sin y con metadatos con Gemini.
 
 ## Documentación completa
 
